@@ -12,6 +12,7 @@ import numpy as np
 from IPython.display import Audio
 from pydantic import BaseModel
 
+
 class Item(BaseModel):
     text: str
 

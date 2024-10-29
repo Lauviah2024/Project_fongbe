@@ -19,7 +19,21 @@ app = FastAPI()
 model = VitsModel.from_pretrained("facebook/mms-tts-fon")
 tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-fon")
 
+@app.get("/")
+def read_root():
+    translated = GoogleTranslator(source='fr', target='fon').translate("Bonsoir. Comment vas-tu ?")
+    text = translated
+    inputs = tokenizer(text, return_tensors="pt")
+    with torch.no_grad():
+        output = model(**inputs).waveform
+   
+    output = output.cpu()
+    data_np = output.numpy()
+    data_np_squeezed = np.squeeze(data_np)
+    scipy.io.wavfile.write("output.wav", rate=model.config.sampling_rate, data=data_np_squeezed)
+    
 
+    return {"data": text, "status": 200}
 
 
 
@@ -28,24 +42,11 @@ tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-fon")
 def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
-@app.post("/create_text")
-def createText(item: Item):
+@app.get("/create_text/{item}")
+def createText(item: str):
     print(item)
-    untranslated = item.text
-
-    
+    untranslated = item  
     translated = GoogleTranslator(source='fr', target='fon').translate(untranslated)
     text = translated
-    print(text)
-    inputs = tokenizer(text, return_tensors="pt")
 
-    print(inputs)
-    with torch.no_grad():
-        output = model(**inputs).waveform
-    output = output.cpu()
-    data_np = output.numpy()
-    data_np_squeezed = np.squeeze(data_np)
-    # scipy.io.wavfile.write("output.wav", rate=model.config.sampling_rate, data=data_np_squeezed)
-    print (output)
-
-    return {"data": data_np_squeezed, "status": 200}
+    return {"data": text, "status": 200}
